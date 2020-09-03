@@ -114,9 +114,9 @@ def plot_ir(I, R, country, country_name, t, ax=None):
     if ax is None:
         fig = plt.figure(facecolor='w')
         ax = fig.add_subplot(111, axisbelow=True)
-    ax.plot(t, I+R, 'r', alpha=0.5, lw=2, label='Заражённые+переболевшие')
-    ax.plot(t, I, 'g', alpha=0.5, lw=2, label='Заражённые')
-    ax.plot(t, R, 'b', alpha=0.5, lw=2, label='Переболевшие')
+    ax.plot(t, I+R, 'r', alpha=0.5, lw=2, label='Infectious+Recovered')
+    ax.plot(t, I, 'g', alpha=0.5, lw=2, label='Infectious')
+    ax.plot(t, R, 'b', alpha=0.5, lw=2, label='Recovered')
     ax.plot(np.arange(0, country.shape[0], 1), country, 'black', alpha=0.5, lw=2, label=country_name)
     ax.set_xlabel('Time /days')
     ax.set_ylabel('Number')
@@ -205,26 +205,24 @@ def compute_scalar_params(data_df, N):
 def cut_confirmed(data_df, cut_koef=10):
     max_conf = data_df.confirmed.max()
     if max_conf < 1000:
-        print(f'\t Warning: Слишком мало зараженных для усечения: max_confirmed = {max_conf}')
-#         raise AssertionError(f'Слишком мало зараженных для усечения: max_confirmed = {max_conf}')
+        print(f'\t Warning: Not enough Infectious observations for cutting: max_confirmed = {max_conf}')
     for i, val in enumerate(data_df.confirmed):
         if val >= max_conf/cut_koef:
             break
     result = data_df.iloc[i:,:]
     if result.shape[0] < 20:
-        print(f'\t Warning: После усечения осталось слишком мало наблюдений: {result.shape[0]}')
-#         raise AssertionError(f'После усечения осталось слишком мало наблюдений: {result.shape[0]}')
+        print(f'\t Warning: Not enough observations left after cutting: {result.shape[0]}')
     return result
 
 def cut_confirmed_to_number(data_df, number=10):
     max_conf = data_df.confirmed.max()
     if max_conf < 1000:
-        print(f'\t Максимальное количство заражённых: max_confirmed = {max_conf}')
+        print(f'\t Max number of infectious observations: max_confirmed = {max_conf}')
     result = data_df[data_df.confirmed > 0]
 
     result = data_df.iloc[-number:,:]
     if result.shape[0] < number:
-        print(f'\t Warning: После усечения осталось слишком мало наблюдений: {result.shape[0]}')
+        print(f'\t Warning: Not enough observations left after cutting: {result.shape[0]}')
         new_val = pd.DataFrame({'confirmed': np.zeros(number-result.shape[0]), 
                                           'death': np.zeros(number-result.shape[0]), 
                                           'recovered': np.zeros(number-result.shape[0])})
@@ -406,9 +404,7 @@ def train(country_name, data, N, dot_number=8):
 #         countries_seir_params[country_name] = train_params, opt_beta, train_data, opt_result
         return train_params, opt_beta, train_data, opt_result
 
-        print(f'\t Тренировка закончена. Значение целевой функции = {opt_result.fun}')
-#     except:
-#         print(f'\t Тренировка закончилась исключением')
+        print(f'\t Training completed. Cost function value = {opt_result.fun}')
 
 
 
@@ -459,7 +455,7 @@ def train_all(rus_regions, countries, rus_directory, country_directory, dot_numb
     counter = 0
     for country_name, country_stat in tqdm(country_data.items(), total=len(country_data)):
         counter+=1
-        print(f'{counter}. Начинаем тренировать страну {country_name}')
+        print(f'{counter}. Training is starting: {country_name}')
         countries_seir_params[country_name] = train(country_name, country_stat, 
             N=countries[countries.ccse_name==country_name]['population'].iloc[0], dot_number=dot_number)
         
@@ -467,7 +463,7 @@ def train_all(rus_regions, countries, rus_directory, country_directory, dot_numb
     counter = 0
     for province, data in tqdm(rus_data.items(), total=len(rus_data)):
         counter+=1
-        print(f'{counter}. Начинаем тренировать регион России {province}')
+        print(f'{counter}. Training is starting: {province}')
         rus_seir_params[province] = train(province, data, \
             N=rus_regions[rus_regions.csse_province_state==province]['population'].iloc[0], dot_number=dot_number)
             
